@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Spark: Logic Dash - คิดทันใจ: ลุยแดนปริศนา</title>
+
+    <!-- Google Fonts: Mitr -->
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Mitr', 'sans-serif'],
+                    },
+                    colors: {
+                        neonCyan: '#00f3ff',
+                        neonPink: '#ff007f',
+                        neonPurple: '#b026ff',
+                        neonYellow: '#ffe600'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'Mitr', sans-serif;
+            background: #090d16;
+            cursor: default;
+        }
+
+        /* Cyber Glassmorphism Styles */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.15), inset 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 243, 255, 0.8);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        /* Neon Glow Animation */
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 8px rgba(0, 243, 255, 0.6)); }
+            50% { filter: drop-shadow(0 0 18px rgba(255, 0, 127, 0.8)); }
+        }
+        .neon-glow {
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        #ui-layer { pointer-events: none; }
+        .pointer-auto { pointer-events: auto; }
+    </style>
+</head>
+<body class="relative w-full h-full text-white select-none overflow-hidden bg-slate-950">
+
+    <!-- Main Game Canvas -->
+    <canvas id="gameCanvas" class="absolute top-0 left-0 w-full h-full z-10"></canvas>
+
+    <!-- Overlay UI Layer -->
+    <div id="ui-layer" class="absolute top-0 left-0 w-full h-full z-20 flex flex-col justify-between p-4 md:p-6">
+        <!-- Top HUD -->
+        <div class="flex justify-between items-center w-full max-w-6xl mx-auto">
+            <!-- Mode Indicator Badge -->
+            <div class="glass-panel px-4 py-2 rounded-2xl text-cyan-300 font-medium text-xs md:text-sm flex items-center gap-2">
+                <span class="animate-pulse">⚡</span>
+                <span>โหมดควบคุมด้วยเมาส์ / การสัมผัส</span>
+            </div>
+
+            <!-- Score & Combo Tracker -->
+            <div id="hudStats" class="hidden flex items-center gap-4">
+                <div class="glass-panel px-5 py-2 rounded-2xl text-right">
+                    <div class="text-xs text-cyan-400 font-semibold">COMBO</div>
+                    <div id="comboVal" class="text-xl md:text-2xl font-bold text-amber-400">x1</div>
+                </div>
+                <div class="glass-panel px-6 py-2 rounded-2xl text-right">
+                    <div class="text-xs text-cyan-400 font-semibold">SCORE</div>
+                    <div id="scoreVal" class="text-2xl md:text-3xl font-bold text-emerald-400">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer Progress Bar -->
+        <div id="timerContainer" class="hidden max-w-3xl w-full mx-auto my-2">
+            <div class="flex justify-between text-xs text-cyan-300 mb-1 font-semibold">
+                <span id="timeText">เวลาตอบสนอง</span>
+                <span id="levelBadgeText">LEVEL 1</span>
+            </div>
+            <div class="w-full h-3 bg-slate-900/80 rounded-full overflow-hidden p-0.5 border border-cyan-500/30">
+                <div id="timerBar" class="h-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-full transition-all duration-100 ease-linear w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- START SCREEN MODAL -->
+    <div id="startModal" class="absolute top-0 left-0 w-full h-full z-30 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md">
+        <div class="glass-panel p-6 md:p-10 rounded-3xl text-center max-w-2xl mx-4 border border-cyan-500/40 neon-glow">
+            <div class="text-6xl mb-3">🧠⚡</div>
+            <h1 class="text-3xl md:text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-pink-500">
+                คิดทันใจ: ลุยแดนปริศนา
+            </h1>
+            <p class="text-cyan-300 text-sm md:text-base font-light mb-6">Mind Spark: Logic Dash — เกมฝึกความไวสมองและตรรกะแบบรวดเร็ว</p>
+            
+            <div class="bg-slate-900/80 p-4 rounded-2xl text-left text-xs md:text-sm text-slate-300 mb-6 border border-white/10 space-y-2">
+                <p class="text-cyan-400 font-semibold mb-1">🎮 วิธีการเล่น:</p>
+                <div class="flex items-center gap-2"><span>1️⃣</span> <span><strong>การควบคุม:</strong> ใช้ <strong>คลิกเมาส์</strong> หรือ <strong>แตะหน้าจอสัมผัส</strong> บนการ์ดคำตอบเพื่อเลือก</span></div>
+                <div class="flex items-center gap-2"><span>2️⃣</span> <span><strong>เป้าหมาย:</strong> ตอบคำถามให้ถูกต้องเร็วที่สุด ทำคะแนนพิชิตทั้ง 5 ด่าน!</span></div>
+            </div>
+
+            <!-- Level Selector Grid -->
+            <div id="levelSelectGrid" class="grid grid-cols-5 gap-2 md:gap-3 mb-6 w-full">
+                <!-- Level Cards Injected Dynamically -->
+            </div>
+
+            <button id="btnStartGame" class="pointer-auto glass-card w-full py-4 rounded-2xl text-xl font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white transition-all transform hover:scale-105 active:scale-95 cursor-pointer border border-cyan-300/50 shadow-lg shadow-cyan-500/30">
+                เริ่มเล่นเกม (Start Game)
+            </button>
+        </div>
+    </div>
+
+    <!-- RESULT DASHBOARD MODAL -->
+    <div id="resultModal" class="hidden absolute top-0 left-0 w-full h-full z-40 flex items-center justify-center bg-slate-950/90 backdrop-blur-lg">
+        <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-xl w-full mx-4 border border-cyan-400/50 text-center shadow-2xl">
+            <h2 id="resultTitle" class="text-3xl font-bold text-cyan-300 mb-1">สรุปผลการเล่น</h2>
+            <div id="resultSubtitle" class="text-sm text-slate-400 mb-4">ด่านที่ 1: Shape & Color</div>
+
+            <!-- Grade & Stars -->
+            <div class="flex justify-center items-center gap-2 mb-2">
+                <div id="starContainer" class="text-3xl text-amber-400">⭐⭐⭐</div>
+                <div id="gradeBadge" class="bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-1 rounded-xl font-black text-2xl text-white shadow-lg">S</div>
+            </div>
+
+            <div class="text-3xl font-extrabold text-emerald-400 mb-4">
+                คะแนนรวม: <span id="finalScore">0</span>
+            </div>
+
+            <!-- Radar Chart Canvas -->
+            <div class="relative w-64 h-64 mx-auto mb-4 bg-slate-900/60 rounded-2xl p-2 border border-white/10">
+                <canvas id="radarChart" width="240" height="240"></canvas>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btnRetry" class="pointer-auto flex-1 py-3 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition-all">
+                    🔄 เล่นอีกครั้ง
+                </button>
+                <button id="btnNextLevel" class="pointer-auto flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold transition-all shadow-lg shadow-cyan-500/20">
+                    ด่านต่อไป ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =========================================
+           1. Web Audio Synthesizer (No external audio needed)
+        ========================================= */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'tap') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.08);
+                    osc.frequency.setValueAtTime(783.99, now + 0.16);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.2);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'clear') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.1);
+                        g.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.25);
+                        o.start(now + idx * 0.1); o.stop(now + idx * 0.1 + 0.25);
+                    });
+                } else if (type === 'flash') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                }
+            } catch (e) { console.log("Audio error", e); }
+        }
+
+        function triggerHaptic() {
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+
+        /* =========================================
+           2. Level Configurations & Game Data
+        ========================================= */
+        const levelsConfig = [
+            { id: 1, name: "Shape & Color", desc: "จับคู่อิโมจิและสีที่ตรงกันภายใน 3 วินาที", skill: "ความไวสายตา", passScore: 800, timeLimit: 3.0 },
+            { id: 2, name: "Stroop Switch", desc: "เลือกคำอ่านสีให้ตรงกับสีตัวอักษร (ห้ามหลงข้อความหลอก)", skill: "การยับยั้งชั่งใจ", passScore: 1000, timeLimit: 3.5 },
+            { id: 3, name: "Math Rush", desc: "เติมเครื่องหมาย + - × ÷ ให้สมการถูกต้อง", skill: "ตรรกะคณิตศาสตร์", passScore: 1200, timeLimit: 4.0 },
+            { id: 4, name: "Pattern Flash", desc: "จำลำดับแสงกะพริบ 4 จุดแล้วกดตามให้ถูกต้อง", skill: "ความจำระยะสั้น", passScore: 1500, timeLimit: 6.0 },
+            { id: 5, name: "Chaos Spark", desc: "สลับกฎโจทย์ของด่าน 1-4 ทุกๆ 10 วินาทีแบบสุ่ม", skill: "ความยืดหยุ่นทางคิด", passScore: 2000, timeLimit: 3.5 }
+        ];
+
+        let unlockedLevels = [true, false, false, false, false];
+        let currentLevelIdx = 0;
+        let score = 0;
+        let combo = 0;
+        let levelTimer = 0;
+        let timerMax = 3.0;
+        let gameState = 'MENU'; // 'MENU', 'PLAYING', 'RESULT'
+
+        // Skill Metrics for Radar Chart
+        let skillMetrics = { speed: 70, focus: 65, logic: 60, memory: 50 };
+
+        /* =========================================
+           3. Canvas Setup & Interaction Engine
+        ========================================= */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gameState === 'PLAYING') {
+                layoutOptionCards();
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        const pointer = { x: canvas.width / 2, y: canvas.height / 2, isDown: false, downTime: 0 };
+        let cursorState = 'normal'; // 'normal', 'hover', 'active'
+        let particles = [];
+        let clickRings = [];
+        let optionCards = [];
+        let activeQuestion = null;
+        let flashSequence = [];
+        let playerSequence = [];
+        let isFlashing = false;
+        let chaosSubMode = 1;
+        let chaosSwitchTimer = 0;
+
+        function updatePointerPos(e) {
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+            pointer.x = clientX;
+            pointer.y = clientY;
+        }
+
+        window.addEventListener('mousemove', updatePointerPos);
+        window.addEventListener('mousedown', (e) => {
+            initAudio();
+            updatePointerPos(e);
+            pointer.isDown = true;
+            addClickRing(pointer.x, pointer.y);
+        });
+        window.addEventListener('mouseup', () => { pointer.isDown = false; });
+        
+        window.addEventListener('touchmove', updatePointerPos, { passive: true });
+        window.addEventListener('touchstart', (e) => {
+            initAudio();
+            updatePointerPos(e);
+            pointer.isDown = true;
+            addClickRing(pointer.x, pointer.y);
+        }, { passive: true });
+        window.addEventListener('touchend', () => { pointer.isDown = false; });
+
+        function addClickRing(x, y) {
+            clickRings.push({ x: x, y: y, radius: 10, maxRadius: 40, alpha: 1.0 });
+        }
+
+        /* =========================================
+           4. Particles & Dynamic Background System
+        ========================================= */
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 25; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.5) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: color,
+                    life: 1.0
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.035;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = clickRings.length - 1; i >= 0; i--) {
+                const r = clickRings[i];
+                r.radius += 2.5;
+                r.alpha -= 0.05;
+                if (r.alpha <= 0) clickRings.splice(i, 1);
+            }
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            clickRings.forEach(r => {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, r.alpha);
+                ctx.strokeStyle = '#00f3ff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            });
+        }
+
+        function drawBackgroundGrid() {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.04)';
+            ctx.lineWidth = 1;
+            const step = 50;
+            for (let x = 0; x < canvas.width; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        /* =========================================
+           5. Question Generators (Levels 1 to 5)
+        ========================================= */
+        function generateQuestion() {
+            const currentLevel = levelsConfig[currentLevelIdx];
+            let targetMode = currentLevel.id;
+
+            if (targetMode === 5) {
+                targetMode = chaosSubMode;
+            }
+
+            timerMax = currentLevel.timeLimit;
+            levelTimer = timerMax;
+
+            optionCards = [];
+            activeQuestion = null;
+
+            if (targetMode === 1) {
+                // Shape & Color
+                const colors = [
+                    { name: 'แดง', code: '#EF4444', emoji: '🔴' },
+                    { name: 'ฟ้า', code: '#3B82F6', emoji: '🔵' },
+                    { name: 'เขียว', code: '#10B981', emoji: '🟢' },
+                    { name: 'เหลือง', code: '#F59E0B', emoji: '🟡' }
+                ];
+                const target = colors[Math.floor(Math.random() * colors.length)];
+                activeQuestion = { title: `เลือกภาพสี [ ${target.name} ]`, targetVal: target.name };
+
+                const shuffled = [...colors].sort(() => Math.random() - 0.5);
+                shuffled.forEach((c, idx) => {
+                    optionCards.push({
+                        id: idx, val: c.name, display: c.emoji, color: c.code,
+                        w: 120, h: 120, x: 0, y: 0, hover: false
+                    });
+                });
+            }
+            else if (targetMode === 2) {
+                // Stroop Switch
+                const colorOptions = [
+                    { text: 'แดง', color: '#EF4444' },
+                    { text: 'ฟ้า', color: '#3B82F6' },
+                    { text: 'เขียว', color: '#10B981' },
+                    { text: 'เหลือง', color: '#F59E0B' }
+                ];
+                const textObj = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                let fontObj = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                
+                activeQuestion = { 
+                    title: "เลือกชื่อของ 'สีตัวอักษร' (มองข้ามข้อความ)",
+                    promptText: textObj.text,
+                    promptColor: fontObj.color,
+                    targetVal: fontObj.text
+                };
+
+                colorOptions.forEach((item, idx) => {
+                    optionCards.push({
+                        id: idx, val: item.text, display: item.text, color: '#1E293B',
+                        w: 130, h: 80, x: 0, y: 0, hover: false
+                    });
+                });
+            }
+            else if (targetMode === 3) {
+                // Math Rush
+                const ops = ['+', '-', '×'];
+                const op = ops[Math.floor(Math.random() * ops.length)];
+                let a = Math.floor(Math.random() * 9) + 1;
+                let b = Math.floor(Math.random() * 9) + 1;
+                let ans = 0;
+                if (op === '+') ans = a + b;
+                if (op === '-') { if (a < b) [a, b] = [b, a]; ans = a - b; }
+                if (op === '×') ans = a * b;
+
+                activeQuestion = {
+                    title: `เติมเครื่องหมาย: ${a} [ ? ] ${b} = ${ans}`,
+                    targetVal: op
+                };
+
+                ['+', '-', '×', '÷'].forEach((o, idx) => {
+                    optionCards.push({
+                        id: idx, val: o, display: o, color: '#334155',
+                        w: 110, h: 110, x: 0, y: 0, hover: false
+                    });
+                });
+            }
+            else if (targetMode === 4) {
+                // Pattern Flash
+                activeQuestion = { title: "จำลำดับแสงกะพริบ แล้วกดตามให้ครบ!", targetVal: 'SEQUENCE' };
+                flashSequence = [];
+                playerSequence = [];
+                for (let i = 0; i < 4; i++) {
+                    flashSequence.push(Math.floor(Math.random() * 4));
+                }
+
+                const nodeColors = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B'];
+                for (let i = 0; i < 4; i++) {
+                    optionCards.push({
+                        id: i, val: i, display: (i + 1).toString(), color: nodeColors[i],
+                        w: 110, h: 110, x: 0, y: 0, activeGlow: false, hover: false
+                    });
+                }
+                playFlashSequence();
+            }
+
+            layoutOptionCards();
+        }
+
+        function playFlashSequence() {
+            isFlashing = true;
+            let step = 0;
+            const interval = setInterval(() => {
+                if (step < flashSequence.length) {
+                    const nodeIdx = flashSequence[step];
+                    optionCards[nodeIdx].activeGlow = true;
+                    playSound('flash');
+                    setTimeout(() => { optionCards[nodeIdx].activeGlow = false; }, 300);
+                    step++;
+                } else {
+                    clearInterval(interval);
+                    isFlashing = false;
+                }
+            }, 550);
+        }
+
+        function layoutOptionCards() {
+            const count = optionCards.length;
+            if (count === 0) return;
+            const spacing = Math.min(24, canvas.width * 0.03);
+            const totalWidth = count * (optionCards[0].w + spacing) - spacing;
+            const startX = (canvas.width - totalWidth) / 2;
+            const startY = canvas.height / 2 + 40;
+
+            optionCards.forEach((card, idx) => {
+                card.x = startX + idx * (card.w + spacing);
+                card.y = startY;
+            });
+        }
+
+        /* =========================================
+           6. Answer Verification & Game Logic
+        ========================================= */
+        function checkAnswer(selectedVal) {
+            if (isFlashing) return;
+
+            const currentLevel = levelsConfig[currentLevelIdx];
+            let isCorrect = false;
+
+            if (currentLevel.id === 4 || (currentLevel.id === 5 && chaosSubMode === 4)) {
+                playerSequence.push(selectedVal);
+                const currentStep = playerSequence.length - 1;
+                if (playerSequence[currentStep] === flashSequence[currentStep]) {
+                    playSound('tap');
+                    if (playerSequence.length === flashSequence.length) {
+                        isCorrect = true;
+                    } else {
+                        return; // Keep waiting for sequence completion
+                    }
+                } else {
+                    isCorrect = false;
+                }
+            } else {
+                isCorrect = (selectedVal === activeQuestion.targetVal);
+            }
+
+            if (isCorrect) {
+                playSound('correct');
+                triggerHaptic();
+                combo++;
+                const timeBonus = Math.round((levelTimer / timerMax) * 100);
+                const points = (100 * combo) + timeBonus;
+                score += points;
+
+                createExplosion(pointer.x, pointer.y, '#00f3ff');
+                skillMetrics.speed = Math.min(100, skillMetrics.speed + 3);
+                skillMetrics.focus = Math.min(100, skillMetrics.focus + 2);
+                skillMetrics.logic = Math.min(100, skillMetrics.logic + 4);
+            } else {
+                playSound('wrong');
+                combo = 0;
+                createExplosion(pointer.x, pointer.y, '#EF4444');
+            }
+
+            updateHUD();
+            generateQuestion();
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('comboVal').innerText = `x${combo}`;
+        }
+
+        function isPointInRect(px, py, rx, ry, rw, rh) {
+            return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+        }
+
+        let lastPointerDown = false;
+
+        function updateInteractions() {
+            const justPressed = pointer.isDown && !lastPointerDown;
+            cursorState = 'normal';
+
+            if (gameState === 'PLAYING' && !isFlashing) {
+                optionCards.forEach((card) => {
+                    const isHovered = isPointInRect(pointer.x, pointer.y, card.x, card.y, card.w, card.h);
+                    card.hover = isHovered;
+                    if (isHovered) {
+                        cursorState = 'hover';
+                        if (justPressed) {
+                            checkAnswer(card.val);
+                        }
+                    }
+                });
+            }
+
+            if (pointer.isDown) {
+                cursorState = 'active';
+            }
+
+            lastPointerDown = pointer.isDown;
+        }
+
+        /* =========================================
+           7. Radar Chart & Result Rendering
+        ========================================= */
+        function renderRadarChart() {
+            const rCanvas = document.getElementById('radarChart');
+            const rCtx = rCanvas.getContext('2d');
+            rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+
+            const cX = rCanvas.width / 2;
+            const cY = rCanvas.height / 2;
+            const radius = 75;
+            const labels = ['ความไว', 'สมาธิ', 'ตรรกะ', 'ความจำ'];
+            const values = [skillMetrics.speed, skillMetrics.focus, skillMetrics.logic, skillMetrics.memory];
+            const numPoints = labels.length;
+
+            // Draw Web Grid
+            rCtx.strokeStyle = 'rgba(0, 243, 255, 0.25)';
+            rCtx.lineWidth = 1;
+            for (let level = 1; level <= 4; level++) {
+                rCtx.beginPath();
+                const r = (radius / 4) * level;
+                for (let i = 0; i < numPoints; i++) {
+                    const angle = (Math.PI * 2 / numPoints) * i - Math.PI / 2;
+                    const x = cX + r * Math.cos(angle);
+                    const y = cY + r * Math.sin(angle);
+                    if (i === 0) rCtx.moveTo(x, y); else rCtx.lineTo(x, y);
+                }
+                rCtx.closePath();
+                rCtx.stroke();
+            }
+
+            // Draw Axis
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (Math.PI * 2 / numPoints) * i - Math.PI / 2;
+                rCtx.beginPath();
+                rCtx.moveTo(cX, cY);
+                rCtx.lineTo(cX + radius * Math.cos(angle), cY + radius * Math.sin(angle));
+                rCtx.stroke();
+
+                // Labels
+                rCtx.fillStyle = '#A5F3FC';
+                rCtx.font = '12px Mitr';
+                rCtx.textAlign = 'center';
+                const lx = cX + (radius + 20) * Math.cos(angle);
+                const ly = cY + (radius + 15) * Math.sin(angle);
+                rCtx.fillText(labels[i], lx, ly + 4);
+            }
+
+            // Draw Value Polygon
+            rCtx.beginPath();
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (Math.PI * 2 / numPoints) * i - Math.PI / 2;
+                const valRadius = (radius * (values[i] / 100));
+                const x = cX + valRadius * Math.cos(angle);
+                const y = cY + valRadius * Math.sin(angle);
+                if (i === 0) rCtx.moveTo(x, y); else rCtx.lineTo(x, y);
+            }
+            rCtx.closePath();
+            rCtx.fillStyle = 'rgba(0, 243, 255, 0.35)';
+            rCtx.fill();
+            rCtx.strokeStyle = '#00f3ff';
+            rCtx.lineWidth = 2;
+            rCtx.stroke();
+        }
+
+        function showResultScreen() {
+            gameState = 'RESULT';
+            playSound('clear');
+            const levelConfig = levelsConfig[currentLevelIdx];
+            const isPassed = score >= levelConfig.passScore;
+
+            if (isPassed && currentLevelIdx + 1 < levelsConfig.length) {
+                unlockedLevels[currentLevelIdx + 1] = true;
+            }
+
+            document.getElementById('resultSubtitle').innerText = `ด่านที่ ${levelConfig.id}: ${levelConfig.name}`;
+            document.getElementById('finalScore').innerText = score;
+
+            let grade = 'C';
+            let stars = '⭐';
+            if (score >= levelConfig.passScore * 1.5) { grade = 'S'; stars = '⭐⭐⭐'; }
+            else if (score >= levelConfig.passScore * 1.2) { grade = 'A'; stars = '⭐⭐⭐'; }
+            else if (score >= levelConfig.passScore) { grade = 'B'; stars = '⭐⭐'; }
+
+            document.getElementById('gradeBadge').innerText = grade;
+            document.getElementById('starContainer').innerText = stars;
+
+            document.getElementById('resultModal').classList.remove('hidden');
+            renderRadarChart();
+            renderLevelSelectGrid();
+        }
+
+        /* =========================================
+           8. Main Canvas Drawing Loop
+        ========================================= */
+        function drawRoundedRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        let lastFrameTime = Date.now();
+
+        function drawLoop() {
+            const now = Date.now();
+            const dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackgroundGrid();
+
+            updateInteractions();
+
+            if (gameState === 'PLAYING') {
+                // Timer Management
+                levelTimer -= dt;
+                const timerBar = document.getElementById('timerBar');
+                const pct = Math.max(0, (levelTimer / timerMax) * 100);
+                timerBar.style.width = `${pct}%`;
+
+                if (levelTimer <= 0) {
+                    playSound('wrong');
+                    combo = 0;
+                    updateHUD();
+                    generateQuestion();
+                }
+
+                // Level 5 Chaos Spark Dynamic Switcher
+                if (levelsConfig[currentLevelIdx].id === 5) {
+                    chaosSwitchTimer += dt;
+                    if (chaosSwitchTimer >= 10) {
+                        chaosSwitchTimer = 0;
+                        chaosSubMode = (chaosSubMode % 4) + 1;
+                        createExplosion(canvas.width / 2, canvas.height / 2, '#FF007F');
+                        generateQuestion();
+                    }
+                }
+            }
+
+            /* --- RENDER PLAYING GAME UI --- */
+            if (gameState === 'PLAYING' && activeQuestion) {
+                // Question Header Glass Box
+                ctx.save();
+                ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+                ctx.strokeStyle = "rgba(0, 243, 255, 0.5)";
+                ctx.lineWidth = 2;
+                
+                const boxW = Math.min(640, canvas.width - 40);
+                const boxH = 100;
+                const boxX = (canvas.width - boxW) / 2;
+                const boxY = 110;
+
+                drawRoundedRect(boxX, boxY, boxW, boxH, 24);
+                ctx.fill(); ctx.stroke();
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#A5F3FC";
+                ctx.font = "20px Mitr";
+                ctx.fillText(activeQuestion.title, canvas.width / 2, boxY + 35);
+
+                if (activeQuestion.promptText) {
+                    ctx.font = "bold 38px Mitr";
+                    ctx.fillStyle = activeQuestion.promptColor;
+                    ctx.fillText(activeQuestion.promptText, canvas.width / 2, boxY + 80);
+                }
+                ctx.restore();
+
+                // Option Cards 2.5D Render
+                optionCards.forEach((card) => {
+                    ctx.save();
+                    ctx.shadowColor = card.hover ? "rgba(0, 243, 255, 0.6)" : "rgba(0, 0, 0, 0.5)";
+                    ctx.shadowBlur = card.hover ? 20 : 12;
+                    ctx.shadowOffsetY = 6;
+
+                    ctx.fillStyle = card.activeGlow ? "#00f3ff" : (card.hover ? "rgba(30, 58, 100, 0.9)" : "rgba(30, 41, 59, 0.8)");
+                    ctx.strokeStyle = card.hover ? "#00f3ff" : (card.activeGlow ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)");
+                    ctx.lineWidth = card.hover ? 3 : 2;
+
+                    const scaleOffset = card.hover ? 4 : 0;
+                    drawRoundedRect(card.x - scaleOffset, card.y - scaleOffset, card.w + scaleOffset * 2, card.h + scaleOffset * 2, 20);
+                    ctx.fill(); ctx.stroke();
+
+                    ctx.shadowBlur = 0;
+                    ctx.textAlign = "center";
+                    ctx.font = "bold 32px Mitr";
+                    ctx.fillStyle = card.activeGlow ? "#090D16" : (card.color !== '#1E293B' && card.color !== '#334155' ? card.color : "#FFFFFF");
+                    ctx.fillText(card.display, card.x + card.w / 2, card.y + card.h / 2 + 10);
+
+                    ctx.restore();
+                });
+            }
+
+            updateParticles();
+            drawParticles();
+
+            requestAnimationFrame(drawLoop);
+        }
+
+        /* =========================================
+           9. UI Navigation & Game Flow
+        ========================================= */
+        function renderLevelSelectGrid() {
+            const grid = document.getElementById('levelSelectGrid');
+            grid.innerHTML = '';
+
+            levelsConfig.forEach((lvl, idx) => {
+                const btn = document.createElement('button');
+                const isUnlocked = unlockedLevels[idx];
+
+                btn.className = `pointer-auto p-3 rounded-2xl flex flex-col items-center justify-center border transition-all ${
+                    isUnlocked 
+                    ? (idx === currentLevelIdx ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 shadow-md' : 'bg-slate-800/60 border-white/20 text-white hover:bg-slate-700/80')
+                    : 'bg-slate-900/40 border-slate-800 text-slate-600 cursor-not-allowed'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="text-xs font-semibold text-cyan-400">LVL ${lvl.id}</span>
+                    <span class="text-sm font-bold truncate max-w-full">${isUnlocked ? lvl.name : '🔒 ล็อก'}</span>
+                `;
+
+                if (isUnlocked) {
+                    btn.onclick = () => {
+                        currentLevelIdx = idx;
+                        renderLevelSelectGrid();
+                    };
+                }
+
+                grid.appendChild(btn);
+            });
+        }
+
+        let levelTimeoutId = null;
+
+        function startLevel(idx) {
+            initAudio();
+            currentLevelIdx = idx;
+            score = 0; combo = 0;
+            gameState = 'PLAYING';
+
+            if (levelTimeoutId) clearTimeout(levelTimeoutId);
+
+            document.getElementById('startModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('hudStats').classList.remove('hidden');
+            document.getElementById('timerContainer').classList.remove('hidden');
+            document.getElementById('levelBadgeText').innerText = `LEVEL ${levelsConfig[idx].id}: ${levelsConfig[idx].name}`;
+
+            updateHUD();
+            generateQuestion();
+
+            // Set round duration (30 seconds per level round)
+            levelTimeoutId = setTimeout(() => {
+                if (gameState === 'PLAYING') showResultScreen();
+            }, 30000);
+        }
+
+        document.getElementById('btnStartGame').addEventListener('click', () => {
+            startLevel(currentLevelIdx);
+        });
+
+        document.getElementById('btnRetry').addEventListener('click', () => {
+            startLevel(currentLevelIdx);
+        });
+
+        document.getElementById('btnNextLevel').addEventListener('click', () => {
+            if (currentLevelIdx + 1 < levelsConfig.length) {
+                startLevel(currentLevelIdx + 1);
+            } else {
+                startLevel(0);
+            }
+        });
+
+        // Initialize UI Grid on startup and start loop
+        resizeCanvas();
+        renderLevelSelectGrid();
+        drawLoop();
+    </script>
+</body>
+</html>
